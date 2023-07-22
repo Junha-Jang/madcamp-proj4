@@ -1,1 +1,12 @@
 # madcamp-proj4
+
+sudo apt-get update
+sudo apt-get install python3-pip
+pip3 --version
+
+pip freeze > requirements.txt
+
+pip install feedparser
+
+pip install beautifulsoup4
+pip install requests
