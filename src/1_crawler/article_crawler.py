@@ -13,6 +13,9 @@ import ssl
 import socket
 from ssl import CertificateError
 
+import requests
+from requests.exceptions import SSLError, RequestException
+
 def input_csv():
     table_data = []
 
@@ -21,6 +24,7 @@ def input_csv():
 
         for row in csv_reader:
             table_data.append(row)
+            print(row)
 
     return table_data
 
@@ -30,51 +34,55 @@ def get_article_text(url):
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        article_body = soup.find('div', {'class': 'article_content'})
+        # article_body = soup.find('div', {'class': 'article_content'})
+        class_names = [
+            'viewConts', #세계타임즈
+            'landing-box', #KBS뉴스
+            'article_cont_wrap', #경기일보
+            'class4'
+        ]  # 클래스 이름 목록을 추가합니다.
 
-        content = article_body.get_text()
+        # 클래스 이름 중에서 조건에 맞는 첫 번째 결과를 찾습니다.
+        article_body = next(
+            (
+                soup.find('div', {'class': class_name})
+                for class_name in class_names
+                if soup.find('div', {'class': class_name}) is not None
+            ), None
+        )
+
+        if article_body is not None:
+            content = article_body.get_text().replace('\n', ' ')
+        else:
+            content = ""
 
         return content
     else:
-        return None
+        return ""
 
-def check_cert(host, port=443):
-    try:
-        context = ssl.create_default_context()
-        with socket.create_connection((host, port)) as sock:
-            with context.wrap_socket(sock, server_hostname=host) as ssock:
-                ssock.getpeercert()
-        print("SSL certificate is valid")
-        return True
-    except CertificateError as e:
-        print(f"SSL certificate error: {e}")
-        return False
-    except ssl.SSLError as e:
-        print(f"SSL error: {e}")
-        return False
-    except Exception as e:
-        print(f"Other error occurred: {e}")
-        return False
-"""
-# Test with a valid domain
-domain = "www.example.com"
-if check_cert(domain):
-    response = requests.get(f"https://{domain}")
-    print(response.content)
-
-# Test with a domain with SSL certificate issues
-domain = "www.eduyonhap.com"
-if check_cert(domain):
-    response = requests.get(f"https://{domain}")
-    print(response.content)
-"""
 def append_article(table_data):
-    table_data[0] += ";description"
-    for row in table_data[1:]:
+    table_data[0].append("redirect")
+    table_data[0].append("redirectLink")
+    table_data[0].append("description")
+    
+    for row in table_data[1:10]:
         url = row[1]
-        if url.startswith('http://') or url.startswith('https://'):
+        try:
             response = requests.get(url)
+            row.append("True")
+            row.append(response.url)
+            row.append(get_article_text(response.url))
             print(response.url)
+        except SSLError:
+            row.append("False")
+            row.append("SSLError")
+            row.append("SSLError")
+            print("SSLError")
+        except RequestException:
+            row.append("False")
+            row.append("RequestException")
+            row.append("RequestException")
+            print("RequestException")
 
         # row.append(f";{get_article_text(row[1])}")
 
@@ -86,8 +94,6 @@ def output_csv(table_data):
             file.write(row_as_string)
 
 if __name__ == '__main__':
-    # response = requests.get("https://news.google.com/rss/articles/CBMiMGh0dHBzOi8vd3d3LmVkdXlvbmhhcC5jb20vbmV3cy92aWV3LnBocD9ubz03NDg5N9IBAA?oc=5")
-    
     table_data = input_csv()
     append_article(table_data)
     output_csv(table_data)

@@ -10,3 +10,12 @@ pip install feedparser
 
 pip install beautifulsoup4
 pip install requests
+
+
+
+
+
+
+pip install konlpy
+
+pip install sentence_transformers
