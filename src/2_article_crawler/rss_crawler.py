@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 
 def input_search():
-    with open('data/search_keywords.txt', mode='r', newline='', encoding='utf-8') as file:
+    with open('data/search.txt', mode='r', newline='', encoding='utf-8') as file:
         # 파일의 내용을 읽어 변수에 저장
         content = file.read()
 
@@ -37,13 +37,17 @@ def output_rss(feed):
         info = {
             'title': entry.title,
             'link': entry.link,
-            'published': entry.published.strftime("%Y-%m-%d %H:%M:%S")
+            'published': entry.published
         }
         df = pd.concat([df, pd.DataFrame([info])])
 
-    df.to_csv('data/raw_data/df_rss.csv', sep=';')
+    df.to_csv('data/raw_data/rss_part1.csv', sep=';', index=False)
 
 if __name__ == '__main__':
+    print("Step 2-1: Crawling RSS feed... ")
+
     content = input_search()
     feed = input_rss(content)
     output_rss(feed)
+
+    print("Complete!!!\n")

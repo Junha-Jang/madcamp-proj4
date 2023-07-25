@@ -20,9 +20,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
-# 예시) 드론에 대한 한국어 문서
+print("Step 1: Extract Keyword from input... ")
 
-doc = """
+# 예시) 드론에 대한 한국어 문서
+"""
+doc = '''
          드론 활용 범위도 점차 확대되고 있다. 최근에는 미세먼지 관리에 드론이 활용되고 있다.
          서울시는 '미세먼지 계절관리제' 기간인 지난달부터 오는 3월까지 4개월간 드론에 측정장치를 달아 미세먼지 집중 관리를 실시하고 있다.
          드론은 산업단지와 사업장 밀집지역을 날아다니며 미세먼지 배출 수치를 점검하고, 현장 모습을 영상으로 담는다.
@@ -33,15 +35,12 @@ doc = """
          소방청 관계자는 "소방드론은 재난현장에서 영상정보를 수집, 산악ㆍ수난 사고 시 인명수색·구조활동,
          유독가스·폭발사고 시 대원안전 확보 등에 활용된다"며
          "향후 화재진압, 인명구조 등에도 드론을 활용하기 위해 연구개발(R&D)을 하고 있다"고 말했다.
-      """
-
+      '''
 """
-with open('data/raw_data/article.txt', mode='r', newline='', encoding='utf-8') as file:
+with open('data/search.txt', mode='r', newline='', encoding='utf-8') as file:
     # 파일의 내용을 읽어 변수에 저장
     doc = file.read()
 
-print(doc)
-"""
 okt = Okt()
 
 tokenized_doc = okt.pos(doc)
@@ -56,7 +55,7 @@ tokenized_nouns = ' '.join([word[0] for word in tokenized_doc if word[1] == 'Nou
 # 2개의 단어를 한 묶음으로 간주하는 bigram과
 # 3개의 단어를 한 묶음으로 간주하는 trigram을 추출
 
-n_gram_range = (1, 1)
+n_gram_range = (1, 3)
 
 count = CountVectorizer(ngram_range=n_gram_range).fit([tokenized_nouns])
 candidates = count.get_feature_names_out()
@@ -64,12 +63,13 @@ candidates = count.get_feature_names_out()
 # print('trigram 개수 :', len(candidates))
 # print('trigram 다섯개만 출력 :', candidates[:5])
 
-
+"""
 top5 = candidates[:5]
 with open('data/processed_data/keyword.csv', mode='w', newline='', encoding='utf-8') as file:
     row_as_string = ";".join(top5) + '\n'
     file.write(row_as_string)
-
+"""
+    
 # 문서와 문서로부터 추출한 키워드들을 SBERT를 통해서 수치화 할 차례
 # 한국어를 포함하고 있는 다국어 SBERT를 로드
 
@@ -106,7 +106,7 @@ print(";".join(keywords) + '\n')
 # 데이터 쌍 사이의 최대 합 거리는 데이터 쌍 간의 거리가 최대화되는 데이터 쌍으로 정의
 # 여기서의 의도는 후보 간의 유사성을 최소화하면서 문서와의 후보 유사성을 극대화하고자 하는 것
 
-def max_sum_sim(doc_embedding, candidate_embeddings, words, top_n, nr_candidates):
+def max_sum_sim(doc_embedding, candidate_embeddings, top_n, nr_candidates):
     # 문서와 각 키워드들 간의 유사도
     distances = cosine_similarity(doc_embedding, candidate_embeddings)
 
@@ -176,6 +176,9 @@ def mmr(doc_embedding, candidate_embeddings, words, top_n, diversity):
     # 최고의 키워드는 이미 추출했으므로 top_n-1번만큼 아래를 반복.
     # ex) top_n = 5라면, 아래의 loop는 4번 반복됨.
     for _ in range(top_n - 1):
+        if not candidates_idx:
+            break
+
         candidate_similarities = word_doc_similarity[candidates_idx, :]
         target_similarities = np.max(word_similarity[candidates_idx][:, keywords_idx], axis=1)
 
@@ -198,4 +201,8 @@ print(";".join(result) + '\n')
 # 그러나 상대적으로 높은 diversity값은 다양한 키워드 5개를 만들어냄
 
 result = mmr(doc_embedding, candidate_embeddings, candidates, top_n=5, diversity=0.7)
-print(";".join(result) + '\n')
+
+with open('data/processed_data/search_keyword.txt', mode='w', newline='', encoding='utf-8') as file:
+    file.write(";".join(result) + '\n')
+
+print("Complete!!!\n")
