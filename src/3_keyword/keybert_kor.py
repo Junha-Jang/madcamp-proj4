@@ -1,3 +1,5 @@
+# Virtual Machine에서 jvm 설치 후 경로 설정
+
 import os
 
 java_path = "/usr/lib/jvm/java-11-openjdk-amd64"
@@ -54,7 +56,7 @@ tokenized_nouns = ' '.join([word[0] for word in tokenized_doc if word[1] == 'Nou
 # 2개의 단어를 한 묶음으로 간주하는 bigram과
 # 3개의 단어를 한 묶음으로 간주하는 trigram을 추출
 
-n_gram_range = (2, 3)
+n_gram_range = (1, 1)
 
 count = CountVectorizer(ngram_range=n_gram_range).fit([tokenized_nouns])
 candidates = count.get_feature_names_out()
