@@ -19,3 +19,8 @@ pip install requests
 pip install konlpy
 
 pip install sentence_transformers
+
+
+sudo apt-get update
+sudo apt-get install openjdk-11-jdk
+

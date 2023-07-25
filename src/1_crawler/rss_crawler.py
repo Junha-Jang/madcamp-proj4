@@ -3,6 +3,7 @@
 
 import feedparser
 from datetime import datetime
+import pandas as pd
 
 def input_search():
     with open('data/search_keywords.txt', mode='r', newline='', encoding='utf-8') as file:
@@ -22,23 +23,25 @@ def input_rss(content):
     return feedparser.parse(rss_link)
 
 def output_rss(feed):
-    with open('data/raw_data/rss.csv', mode='w', newline='', encoding='utf-8') as file:
-        # 뉴스 항목을 순회하고 제목, 링크 및 게시 날짜를 출력합니다.
-        file.write("Title;")
-        file.write("Link;")
-        file.write("Published")
-        file.write("\n")
-        for entry in feed.entries:
-            # Wed, 31 May 2023 07:00:00 GMT -> 2023-05-42 07:00:00
-            entry.published = datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %Z")
+    # 뉴스 항목을 순회하고 제목, 링크 및 게시 날짜를 출력합니다.
+    for entry in feed.entries:
+        # Wed, 31 May 2023 07:00:00 GMT -> 2023-05-42 07:00:00
+        entry.published = datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %Z")
 
-        feed.entries = sorted(feed.entries, key=lambda x: x.published, reverse=True)
+    feed.entries = sorted(feed.entries, key=lambda x: x.published, reverse=True)
 
-        for entry in feed.entries:
-            file.write(f"{entry.title};")
-            file.write(f"{entry.link};")
-            file.write(entry.published.strftime("%Y-%m-%d %H:%M:%S"))
-            file.write("\n")
+    # 빈 DataFrame 생성
+    df = pd.DataFrame()
+
+    for entry in feed.entries:
+        info = {
+            'title': entry.title,
+            'link': entry.link,
+            'published': entry.published.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        df = pd.concat([df, pd.DataFrame([info])])
+
+    df.to_csv('data/raw_data/df_rss.csv', sep=';')
 
 if __name__ == '__main__':
     content = input_search()
